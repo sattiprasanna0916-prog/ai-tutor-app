@@ -1,0 +1,17 @@
+# Virtual environment
+backend/venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Dataset cache (HuggingFace etc.)
+.cache/
+*.parquet
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -1,25 +1,73 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+import pandas as pd
+import os
+from datetime import datetime
+
 app = FastAPI()
+
+DATA_PATH = "datasets"
+USERS_FILE = os.path.join(DATA_PATH, "users.csv")
+
+
+# ---------- Models ----------
+
+class RegisterRequest(BaseModel):
+    name: str
+    branch: str
+    year_of_study: int
+
+
+class LoginRequest(BaseModel):
+    user_id: str
+
+
+# ---------- Routes ----------
+
 @app.get("/")
 def home():
-    return {"message": "AI Tutor Backend Running 🚀"}
+    return {"message": "AI Tutor Backend Running"}
 
-@app.get("/get-task")
-def get_task():
-    return {
-        "task_id": 1,
-        "prompt": "Introduce yourself in English."
+
+@app.post("/register")
+def register_user(request: RegisterRequest):
+
+    df = pd.read_csv(USERS_FILE)
+
+    # Generate new user ID
+    new_id = f"U{len(df)+1:03}"
+
+    new_user = {
+        "user_id": new_id,
+        "branch": request.branch,
+        "year_of_study": request.year_of_study,
+        "course": "English Speaking",
+        "current_level": "Beginner",
+        "created_at": datetime.now()
     }
 
-@app.post("/submit-score")
-def submit_score(fluency: int, grammar: int, accuracy: int):
-    status = "Practice Required"
-    if fluency >= 90 and grammar >= 90 and accuracy >= 90:
-        status = "Level Up 🎉"
+    df = pd.concat([df, pd.DataFrame([new_user])], ignore_index=True)
+    df.to_csv(USERS_FILE, index=False)
 
     return {
-        "fluency": fluency,
-        "grammar": grammar,
-        "accuracy": accuracy,
-        "status": status
+        "message": "User registered successfully",
+        "user_id": new_id,
+        "current_level": "Beginner"
+    }
+
+
+@app.post("/login")
+def login_user(request: LoginRequest):
+
+    df = pd.read_csv(USERS_FILE)
+
+    user = df[df["user_id"] == request.user_id]
+
+    if user.empty:
+        return {"error": "User not found"}
+
+    return {
+        "message": "Login successful",
+        "user_id": request.user_id,
+        "current_level": user.iloc[0]["current_level"]
     }
